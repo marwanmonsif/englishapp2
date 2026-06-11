@@ -1,0 +1,78 @@
+{% extends "shared/base.html" %}
+{% block title %}{{ course.title }}{% endblock %}
+{% block page_title %}{{ course.title }}{% endblock %}
+{% block content %}
+
+<div class="breadcrumb">
+  <a href="{{ url_for('student.courses') }}">Courses</a>
+  <i class="fas fa-chevron-right" style="font-size:11px"></i>
+  <span>{{ course.title }}</span>
+</div>
+
+<div class="card" style="margin-bottom:20px">
+  <div class="card-body" style="display:flex;align-items:center;gap:20px;padding:24px">
+    <div style="font-size:48px">📚</div>
+    <div>
+      <h1 style="font-size:22px;font-weight:800;margin-bottom:6px">{{ course.title }}</h1>
+      <p style="color:var(--text-secondary);font-size:14px">{{ course.description or '' }}</p>
+      <div style="display:flex;gap:16px;margin-top:12px">
+        <div class="meta-item"><i class="fas fa-layer-group" style="color:var(--primary)"></i> {{ course.units|length }} Units</div>
+        <div class="meta-item"><i class="fas fa-graduation-cap" style="color:var(--primary)"></i> {{ course.grade.name }}</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if course.units %}
+  {% for unit in course.units %}
+  <div class="unit-block">
+    <div class="unit-header">
+      <div class="unit-title">
+        <div class="unit-icon"><i class="fas fa-folder"></i></div>
+        {{ unit.title }}
+      </div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <span class="badge badge-gray">{{ unit.lessons|length }} lessons</span>
+        <i class="fas fa-chevron-down" style="color:var(--text-muted)"></i>
+      </div>
+    </div>
+
+    {% if unit.lessons %}
+    <div class="lessons-list">
+      {% for lesson in unit.lessons %}
+      <a href="{{ url_for('student.lesson_detail', lesson_id=lesson.id) }}" class="lesson-item">
+        <div class="lesson-icon">
+          {% if lesson.youtube_url %}<i class="fas fa-play"></i>{% else %}<i class="fas fa-book"></i>{% endif %}
+        </div>
+        <div class="lesson-info">
+          <div class="lesson-name">{{ lesson.title }}</div>
+          <div class="lesson-meta">
+            {% if lesson.youtube_url %}<span><i class="fas fa-video"></i> Video</span>{% endif %}
+            {% if lesson.pdf_filename %}<span> · <i class="fas fa-file-pdf"></i> PDF Notes</span>{% endif %}
+          </div>
+        </div>
+        <div class="lesson-badges">
+          {% if lesson.exams %}<span class="badge badge-primary" style="font-size:11px"><i class="fas fa-clipboard-list"></i> Quiz</span>{% endif %}
+        </div>
+        <i class="fas fa-chevron-right" style="color:var(--text-muted)"></i>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+      <div style="padding:16px 18px;color:var(--text-muted);font-size:14px;border:1px solid var(--border);border-top:none;border-radius:0 0 8px 8px">
+        No lessons added yet.
+      </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="card">
+    <div class="empty-state">
+      <div class="empty-icon">📂</div>
+      <div class="empty-title">No Units Yet</div>
+      <div class="empty-sub">Content is being prepared. Check back soon.</div>
+    </div>
+  </div>
+{% endif %}
+
+{% endblock %}

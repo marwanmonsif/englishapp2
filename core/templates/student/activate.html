@@ -1,0 +1,46 @@
+{% extends "shared/base.html" %}
+{% block title %}Activate Subscription{% endblock %}
+{% block page_title %}Subscription{% endblock %}
+{% block content %}
+
+<div class="activate-card card">
+  <div class="card-body" style="padding:40px;text-align:center">
+    <div style="font-size:60px;margin-bottom:16px">🔑</div>
+    <h2 style="font-size:22px;font-weight:800;margin-bottom:8px">Activate Your Subscription</h2>
+    <p style="color:var(--text-secondary);margin-bottom:28px">Enter the activation code provided by your teacher to unlock all lessons and exams for {{ current_user.grade.name }}.</p>
+
+    {% if existing and existing.expires_at > now %}
+      <div class="alert alert-success" style="text-align:left;margin-bottom:20px">
+        <i class="fas fa-check-circle"></i>
+        <div>
+          <strong>Active Subscription</strong><br>
+          <span style="font-size:13px">Code: {{ existing.code }} — Expires: {{ existing.expires_at.strftime('%d %b %Y') }}</span>
+        </div>
+      </div>
+    {% else %}
+      <form method="POST">
+        <div class="form-group">
+          <label class="form-label">Activation Code</label>
+          <input type="text" name="code" class="form-control code-input" placeholder="ENG-XXXX-YYYY" required
+                 maxlength="15" style="font-size:20px;text-transform:uppercase;letter-spacing:3px">
+          <div class="form-text">Format: ENG-XXXX-YYYY</div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg" style="width:100%;justify-content:center">
+          <i class="fas fa-unlock"></i> Activate Code
+        </button>
+      </form>
+    {% endif %}
+
+    <div style="margin-top:24px;padding:16px;background:var(--bg);border-radius:8px;font-size:13px;color:var(--text-secondary)">
+      <i class="fas fa-info-circle"></i>
+      Don't have a code? Ask your teacher for an activation code.
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_scripts %}
+<script>
+// Pass 'now' to template
+</script>
+{% endblock %}

@@ -1,0 +1,245 @@
+{% extends "shared/base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+{% block content %}
+
+{% if not is_subscribed %}
+<div class="alert alert-info">
+  <i class="fas fa-key"></i>
+  <strong>Subscription Required:</strong> Please activate your subscription to access lessons and exams.
+  <a href="{{ url_for('student.activate') }}" class="btn btn-sm btn-primary" style="margin-left:12px">Activate Now</a>
+  <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+</div>
+{% endif %}
+
+<!-- Stats -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-book-open"></i></div>
+    <div>
+      <div class="stat-value">{{ courses|length }}</div>
+      <div class="stat-label">My Courses</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fas fa-clipboard-check"></i></div>
+    <div>
+      <div class="stat-value">{{ results|length }}</div>
+      <div class="stat-label">Exams Done</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon orange"><i class="fas fa-star"></i></div>
+    <div>
+      <div class="stat-value">
+        {% if results %}{{ "%.0f"|format(results|map(attribute='percentage')|list|sum / results|length) }}%{% else %}—{% endif %}
+      </div>
+      <div class="stat-label">Avg Score</div>
+    </div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon {% if is_subscribed %}green{% else %}red{% endif %}">
+      <i class="fas fa-key"></i>
+    </div>
+    <div>
+      <div class="stat-value" style="font-size:18px">{% if is_subscribed %}Active{% else %}None{% endif %}</div>
+      <div class="stat-label">Subscription</div>
+    </div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 340px;gap:20px">
+
+  <!-- Courses -->
+  <div>
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fas fa-book-open" style="color:var(--primary);margin-right:8px"></i>My Courses</div>
+        <a href="{{ url_for('student.courses') }}" class="btn btn-sm btn-outline">View All</a>
+      </div>
+      <div class="card-body">
+        {% if courses %}
+          <div class="cards-grid">
+            {% for course in courses %}
+            <a href="{{ url_for('student.course_detail', course_id=course.id) }}" class="course-card">
+              <div class="course-card-thumb">📚</div>
+              <div class="course-card-body">
+                <div class="course-card-title">{{ course.title }}</div>
+                <div class="course-card-desc">{{ course.description or 'Click to start learning' }}</div>
+              </div>
+              <div class="course-card-meta">
+                <div class="meta-item"><i class="fas fa-layer-group"></i> {{ course.units|length }} Units</div>
+                <div class="meta-item"><i class="fas fa-play-circle"></i>
+                  {% set total = namespace(count=0) %}
+                  {% for unit in course.units %}{% set total.count = total.count + unit.lessons|length %}{% endfor %}
+                  {{ total.count }} Lessons
+                </div>
+              </div>
+            </a>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <div class="empty-icon">📚</div>
+            <div class="empty-title">No courses yet</div>
+            <div class="empty-sub">Your teacher hasn't added any courses yet. Check back soon!</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right column: Announcements + Subscription info -->
+  <div>
+    <!-- Subscription info -->
+    {% if is_subscribed and sub %}
+    <div class="card mb-3" style="margin-bottom:16px">
+      <div class="card-body" style="padding:18px">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px">
+          <div class="stat-icon green" style="width:36px;height:36px;font-size:16px"><i class="fas fa-check"></i></div>
+          <div>
+            <div style="font-weight:700;font-size:14px">Active Subscription</div>
+            <div class="text-sm text-muted">{{ current_user.grade.name }}</div>
+          </div>
+        </div>
+        <div class="text-sm text-muted">
+          Expires: <strong>{{ sub.expires_at.strftime('%d %b %Y') }}</strong>
+        </div>
+      </div>
+    </div>
+    {% endif %}
+
+    <!-- Announcements -->
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title"><i class="fas fa-bullhorn" style="color:var(--primary);margin-right:8px"></i>Announcements</div>
+        <a href="{{ url_for('student.announcements') }}" class="btn btn-sm btn-ghost">All</a>
+      </div>
+      <div class="card-body" style="padding:16px">
+        {% if announcements %}
+          {% for ann in announcements %}
+          <div class="ann-card {{ 'pinned' if ann.is_pinned }}" style="margin-bottom:12px;padding:14px 16px">
+            {% if ann.is_pinned %}
+              <span class="badge badge-primary" style="margin-bottom:8px;font-size:11px"><i class="fas fa-thumbtack"></i> Pinned</span>
+            {% endif %}
+            <div class="ann-title" style="font-size:14px">{{ ann.title }}</div>
+            <div class="ann-content" style="font-size:13px">{{ ann.content[:120] }}{% if ann.content|length > 120 %}...{% endif %}</div>
+            <div class="ann-meta">{{ ann.created_at.strftime('%d %b %Y') }}</div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="empty-state" style="padding:30px 20px">
+            <div class="empty-icon" style="font-size:36px">📢</div>
+            <div class="empty-sub">No announcements yet</div>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- Recent exam results -->
+{% if results %}
+<div class="card mt-3" style="margin-top:20px">
+  <div class="card-header">
+    <div class="card-title"><i class="fas fa-chart-bar" style="color:var(--primary);margin-right:8px"></i>Recent Results</div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Exam</th><th>Score</th><th>Percentage</th><th>Status</th><th>Date</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for r in results[-5:]|reverse %}
+        <tr>
+          <td><strong>{{ r.exam.title }}</strong></td>
+          <td>{{ r.score }} / {{ r.total }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="progress-bar" style="width:80px">
+                <div class="progress-fill" style="width:{{ r.percentage }}%;background:{{ 'var(--success)' if r.percentage >= r.exam.pass_score else 'var(--error)' }}"></div>
+              </div>
+              {{ "%.1f"|format(r.percentage) }}%
+            </div>
+          </td>
+          <td>
+            {% if r.percentage >= r.exam.pass_score %}
+              <span class="badge badge-success">Pass</span>
+            {% else %}
+              <span class="badge badge-danger">Fail</span>
+            {% endif %}
+          </td>
+          <td class="text-muted text-sm">{{ r.submitted_at.strftime('%d %b %Y') }}</td>
+          <td><a href="{{ url_for('student.exam_result', result_id=r.id) }}" class="btn btn-sm btn-ghost">View</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Announcement popup — show unseen announcements
+const seenIds = "{{ current_user.seen_announcements or '' }}".split(',').filter(Boolean);
+const announcements = [
+  {% for ann in announcements %}
+  { id: {{ ann.id }}, title: {{ ann.title|tojson }}, content: {{ ann.content|tojson }}, pinned: {{ ann.is_pinned|tojson }} },
+  {% endfor %}
+];
+
+const unseen = announcements.filter(a => !seenIds.includes(String(a.id)));
+
+if (unseen.length > 0) {
+  let current = 0;
+
+  function showPopup(ann) {
+    const overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+    overlay.innerHTML = `
+      <div style="background:#fff;border-radius:16px;max-width:480px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.3);overflow:hidden;animation:modalIn .2s ease">
+        <div style="background:var(--primary);padding:20px 24px;display:flex;align-items:center;gap:12px">
+          <div style="font-size:24px">📢</div>
+          <div>
+            <div style="color:#fff;font-weight:800;font-size:16px">${ann.pinned ? '📌 ' : ''}${ann.title}</div>
+            <div style="color:rgba(255,255,255,.7);font-size:12px">New Announcement</div>
+          </div>
+        </div>
+        <div style="padding:24px">
+          <p style="font-size:15px;line-height:1.7;color:#334155">${ann.content}</p>
+        </div>
+        <div style="padding:16px 24px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:10px">
+          ${current < unseen.length - 1 ? `<button onclick="nextAnn()" style="padding:9px 18px;background:#f1f5f9;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">Next (${current+1}/${unseen.length})</button>` : ''}
+          <button onclick="closePopup()" style="padding:9px 18px;background:var(--primary);color:#fff;border:none;border-radius:8px;font-weight:600;cursor:pointer;font-size:14px">Got it!</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    window._annOverlay = overlay;
+
+    // Mark as seen
+    fetch('/announcements/mark-seen', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({id: ann.id})
+    });
+  }
+
+  function closePopup() {
+    if (window._annOverlay) window._annOverlay.remove();
+  }
+
+  function nextAnn() {
+    closePopup();
+    current++;
+    if (current < unseen.length) showPopup(unseen[current]);
+  }
+
+  // Show after 1 second
+  setTimeout(() => showPopup(unseen[0]), 1000);
+}
+</script>
+{% endblock %}

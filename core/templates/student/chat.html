@@ -1,0 +1,132 @@
+{% extends "shared/base.html" %}
+{% block title %}Class Chat{% endblock %}
+{% block page_title %}{{ grade.name }} — Class Chat{% endblock %}
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.min.js"></script>
+{% endblock %}
+{% block content %}
+
+<div style="font-size:13px;color:var(--text-secondary);margin-bottom:12px">
+  <i class="fas fa-info-circle"></i> This is your class group chat. Be respectful and stay on topic.
+</div>
+
+<div class="chat-container">
+  <div class="chat-messages" id="messagesContainer">
+    {% for msg in messages %}
+    <div class="msg-wrapper {{ 'mine' if msg.sender_id == current_user.id else '' }}" id="msg-{{ msg.id }}">
+      {% if msg.sender_id != current_user.id %}
+      <div class="msg-sender" style="padding:0 4px;color:{{ '#7c3aed' if msg.sender.role == 'teacher' else 'var(--text-secondary)' }}">
+        {{ msg.sender.name }}{% if msg.sender.role == 'teacher' %} 🎓{% endif %}
+      </div>
+      {% endif %}
+      <div class="msg-bubble {{ 'mine' if msg.sender_id == current_user.id else 'teacher' if msg.sender.role == 'teacher' else 'theirs' }}">
+        {{ msg.content }}
+        <div class="msg-meta">{{ msg.created_at.strftime('%H:%M') }}</div>
+      </div>
+      {% if msg.sender_id != current_user.id %}
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <button class="btn btn-sm btn-ghost" style="font-size:11px;padding:3px 8px"
+          onclick="reportMessage({{ msg.id }})">
+          <i class="fas fa-flag"></i> Report
+        </button>
+      </div>
+      {% endif %}
+    </div>
+    {% endfor %}
+    {% if not messages %}
+    <div style="text-align:center;color:var(--text-muted);padding:40px">
+      <div style="font-size:40px;margin-bottom:12px">💬</div>
+      <div>No messages yet. Start the conversation!</div>
+    </div>
+    {% endif %}
+  </div>
+
+  <div class="chat-input-area">
+    <input type="text" id="chatInput" class="form-control" placeholder="Type your message..." maxlength="500" autocomplete="off">
+    <button class="btn btn-primary" id="sendBtn">
+      <i class="fas fa-paper-plane"></i>
+    </button>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_scripts %}
+<script>
+const socket = io();
+const gradeId = {{ current_user.grade_id }};
+const currentUserId = {{ current_user.id }};
+const messagesContainer = document.getElementById('messagesContainer');
+const chatInput = document.getElementById('chatInput');
+
+socket.emit('join', { grade_id: gradeId });
+
+function scrollToBottom() {
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+}
+scrollToBottom();
+
+socket.on('new_message', function(data) {
+  const wrapper = document.createElement('div');
+  const isMine = data.sender_id === currentUserId;
+  wrapper.className = `msg-wrapper ${isMine ? 'mine' : ''}`;
+  wrapper.id = `msg-${data.id}`;
+
+  let senderHtml = '';
+  if (!isMine) {
+    const color = data.is_teacher ? '#7c3aed' : 'var(--text-secondary)';
+    senderHtml = `<div class="msg-sender" style="padding:0 4px;color:${color}">${data.sender}${data.is_teacher ? ' 🎓' : ''}</div>`;
+  }
+
+  const bubbleClass = isMine ? 'mine' : (data.is_teacher ? 'teacher' : 'theirs');
+  let reportHtml = '';
+  if (!isMine) {
+    reportHtml = `<div style="display:flex;gap:6px;margin-top:4px">
+      <button class="btn btn-sm btn-ghost" style="font-size:11px;padding:3px 8px" onclick="reportMessage(${data.id})">
+        <i class="fas fa-flag"></i> Report
+      </button>
+    </div>`;
+  }
+
+  wrapper.innerHTML = `
+    ${senderHtml}
+    <div class="msg-bubble ${bubbleClass}">
+      ${data.content}
+      <div class="msg-meta">${data.time}</div>
+    </div>
+    ${reportHtml}
+  `;
+
+  messagesContainer.appendChild(wrapper);
+  scrollToBottom();
+});
+
+socket.on('message_deleted', function(data) {
+  const el = document.getElementById(`msg-${data.msg_id}`);
+  if (el) el.remove();
+});
+
+function sendMessage() {
+  const content = chatInput.value.trim();
+  if (!content) return;
+  socket.emit('send_message', { grade_id: gradeId, content });
+  chatInput.value = '';
+}
+
+document.getElementById('sendBtn').addEventListener('click', sendMessage);
+chatInput.addEventListener('keydown', function(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+
+function reportMessage(msgId) {
+  if (!confirm('Report this message as inappropriate?')) return;
+  fetch(`/chat/report/${msgId}`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+    body: 'reason=Inappropriate+content'
+  }).then(() => alert('Message reported. Thank you!'));
+}
+</script>
+{% endblock %}

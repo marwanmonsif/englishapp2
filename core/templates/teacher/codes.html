@@ -1,0 +1,114 @@
+{% extends "shared/base.html" %}
+{% block title %}Activation Codes{% endblock %}
+{% block page_title %}Subscription Codes{% endblock %}
+{% block content %}
+
+<div style="display:flex;justify-content:flex-end;margin-bottom:20px">
+  <button class="btn btn-primary" data-modal="generateModal">
+    <i class="fas fa-key"></i> Generate Codes
+  </button>
+</div>
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title">All Codes ({{ codes|length }})</div>
+    <div style="display:flex;gap:8px">
+      <span class="badge badge-success">{{ codes|selectattr('used_by')|list|length }} Used</span>
+      <span class="badge badge-gray">{{ codes|rejectattr('used_by')|list|length }} Available</span>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Code</th><th>Grade</th><th>Status</th><th>Used By</th><th>Expires</th><th>Created</th><th></th></tr>
+      </thead>
+      <tbody>
+        {% for code in codes %}
+        <tr>
+          <td><code style="font-family:monospace;font-size:14px;font-weight:700;color:var(--primary);background:var(--primary-light);padding:3px 8px;border-radius:4px">{{ code.code }}</code></td>
+          <td><span class="badge badge-primary">{{ code.grade.name }}</span></td>
+          <td>
+            {% if code.used_by %}
+              <span class="badge badge-gray">Used</span>
+            {% elif code.expires_at < now %}
+              <span class="badge badge-danger">Expired</span>
+            {% else %}
+              <span class="badge badge-success">Available</span>
+            {% endif %}
+          </td>
+          <td>
+            {% if code.student %}
+              <div style="font-size:13px"><strong>{{ code.student.name }}</strong></div>
+              <div class="text-sm text-muted">{{ code.student.email }}</div>
+            {% else %}
+              <span class="text-muted">—</span>
+            {% endif %}
+          </td>
+          <td class="text-sm {{ 'text-muted' if code.expires_at > now else '' }}" style="{{ 'color:var(--error)' if code.expires_at < now }}">
+            {{ code.expires_at.strftime('%d %b %Y') }}
+          </td>
+          <td class="text-sm text-muted">{{ code.created_at.strftime('%d %b %Y') }}</td>
+          <td>
+            {% if not code.used_by %}
+            <form method="POST" action="{{ url_for('teacher.delete_code', code_id=code.id) }}" style="display:inline">
+              <button type="button" class="btn btn-sm btn-danger"
+                onclick="confirmDelete(this.form, 'Delete this unused code?')">
+                <i class="fas fa-trash"></i>
+              </button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not codes %}
+        <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">No codes generated yet.</td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Generate Modal -->
+<div class="modal-overlay" id="generateModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fas fa-key"></i> Generate Activation Codes</div>
+      <button class="modal-close">×</button>
+    </div>
+    <form method="POST" action="{{ url_for('teacher.generate_codes') }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Grade *</label>
+          <select name="grade_id" class="form-control" required>
+            <option value="">Select grade...</option>
+            {% for grade in grades %}
+            <option value="{{ grade.id }}">{{ grade.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Number of Codes</label>
+            <input type="number" name="count" class="form-control" value="5" min="1" max="50">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Valid for (days)</label>
+            <input type="number" name="days" class="form-control" value="180" min="1" max="730">
+          </div>
+        </div>
+        <div style="padding:12px;background:var(--primary-light);border-radius:8px;font-size:13px;color:var(--primary)">
+          <i class="fas fa-info-circle"></i> Codes will be in format <strong>ENG-XXXX-YYYY</strong>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal>Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-key"></i> Generate</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_scripts %}
+<script>const now = new Date('{{ now.isoformat() }}');</script>
+{% endblock %}

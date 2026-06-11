@@ -1,0 +1,81 @@
+{% extends "shared/base.html" %}
+{% block title %}Chat Moderation{% endblock %}
+{% block page_title %}Chat Moderation{% endblock %}
+{% block content %}
+
+<div style="display:flex;gap:16px;margin-bottom:20px;flex-wrap:wrap">
+  {% for grade in grades %}
+  <a href="{{ url_for('teacher.grade_messages', grade_id=grade.id) }}" class="card" style="text-decoration:none;padding:16px 20px;display:flex;align-items:center;gap:12px;min-width:200px">
+    <div class="stat-icon blue" style="width:38px;height:38px;font-size:16px"><i class="fas fa-comments"></i></div>
+    <div>
+      <div style="font-weight:700;font-size:14px">{{ grade.name }}</div>
+      <div class="text-sm text-muted">View messages</div>
+    </div>
+  </a>
+  {% endfor %}
+</div>
+
+<!-- Reported Messages -->
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><i class="fas fa-flag" style="color:var(--error);margin-right:8px"></i>Reported Messages ({{ reports|length }} pending)</div>
+  </div>
+  {% if reports %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Message</th><th>Sender</th><th>Grade</th><th>Reported By</th><th>Reason</th><th>Date</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for report in reports %}
+        <tr>
+          <td style="max-width:200px">
+            <div style="font-size:13px;background:var(--bg);padding:8px;border-radius:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+              {{ report.message.content }}
+            </div>
+          </td>
+          <td><strong>{{ report.message.sender.name }}</strong></td>
+          <td><span class="badge badge-primary">{{ report.message.grade.name }}</span></td>
+          <td>{{ report.reporter.name if report.reporter else '—' }}</td>
+          <td class="text-sm">{{ report.reason or '—' }}</td>
+          <td class="text-sm text-muted">{{ report.created_at.strftime('%d %b %Y') }}</td>
+          <td>
+            <div style="display:flex;gap:6px">
+              <button class="btn btn-sm btn-danger" onclick="deleteMessage({{ report.message_id }}, this)">
+                <i class="fas fa-trash"></i> Delete
+              </button>
+              <button class="btn btn-sm btn-ghost" onclick="reviewReport({{ report.id }}, this)">
+                <i class="fas fa-check"></i> Dismiss
+              </button>
+            </div>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body">
+    <div class="empty-state" style="padding:30px">
+      <div class="empty-icon" style="font-size:40px">✅</div>
+      <div class="empty-title">No Pending Reports</div>
+      <div class="empty-sub">All reported messages have been reviewed.</div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}
+{% block extra_scripts %}
+<script>
+function deleteMessage(msgId, btn) {
+  if (!confirm('Delete this message?')) return;
+  fetch(`/teacher/chat/delete/${msgId}`, { method: 'POST' })
+    .then(r => r.json()).then(() => btn.closest('tr').remove());
+}
+function reviewReport(reportId, btn) {
+  fetch(`/teacher/chat/report/${reportId}/review`, { method: 'POST' })
+    .then(r => r.json()).then(() => btn.closest('tr').remove());
+}
+</script>
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends "shared/base.html" %}
+{% block title %}{{ grade.name }} Chat{% endblock %}
+{% block page_title %}{{ grade.name }} — Chat History{% endblock %}
+{% block extra_head %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.0/socket.io.min.js"></script>
+{% endblock %}
+{% block content %}
+
+<div class="breadcrumb">
+  <a href="{{ url_for('teacher.chat_moderation') }}">Chat Moderation</a>
+  <i class="fas fa-chevron-right" style="font-size:11px"></i>
+  <span>{{ grade.name }}</span>
+</div>
+
+<div class="chat-container">
+  <div class="chat-messages" id="messagesContainer">
+    {% for msg in messages %}
+    {% if not msg.is_deleted %}
+    <div class="msg-wrapper" id="msg-{{ msg.id }}">
+      <div class="msg-sender" style="padding:0 4px;color:{{ '#7c3aed' if msg.sender.role == 'teacher' else 'var(--text-secondary)' }}">
+        {{ msg.sender.name }}{% if msg.sender.role == 'teacher' %} 🎓{% endif %}
+      </div>
+      <div class="msg-bubble theirs" style="max-width:80%">
+        {{ msg.content }}
+        <div class="msg-meta">{{ msg.created_at.strftime('%d %b %Y %H:%M') }}</div>
+      </div>
+      <div style="display:flex;gap:6px;margin-top:4px">
+        <button class="btn btn-sm btn-danger" style="font-size:11px;padding:3px 8px"
+          onclick="deleteMessage({{ msg.id }})">
+          <i class="fas fa-trash"></i> Delete
+        </button>
+        {% if msg.reports %}<span class="badge badge-danger" style="font-size:11px">{{ msg.reports|length }} report(s)</span>{% endif %}
+      </div>
+    </div>
+    {% endif %}
+    {% endfor %}
+    {% if not messages %}
+    <div style="text-align:center;color:var(--text-muted);padding:40px">No messages in this chat.</div>
+    {% endif %}
+  </div>
+
+  <!-- Teacher can also send messages -->
+  <div class="chat-input-area">
+    <input type="text" id="chatInput" class="form-control" placeholder="Send a message as teacher..." maxlength="500" autocomplete="off">
+    <button class="btn btn-primary" id="sendBtn"><i class="fas fa-paper-plane"></i> Send</button>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_scripts %}
+<script>
+const socket = io();
+const gradeId = {{ grade.id }};
+const messagesContainer = document.getElementById('messagesContainer');
+const chatInput = document.getElementById('chatInput');
+
+socket.emit('join', { grade_id: gradeId });
+messagesContainer.scrollTop = messagesContainer.scrollHeight;
+
+socket.on('new_message', function(data) {
+  const wrapper = document.createElement('div');
+  wrapper.className = 'msg-wrapper';
+  wrapper.id = `msg-${data.id}`;
+  wrapper.innerHTML = `
+    <div class="msg-sender" style="padding:0 4px;color:${data.is_teacher ? '#7c3aed' : 'var(--text-secondary)'}">
+      ${data.sender}${data.is_teacher ? ' 🎓' : ''}
+    </div>
+    <div class="msg-bubble theirs" style="max-width:80%">
+      ${data.content}
+      <div class="msg-meta">${data.time}</div>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:4px">
+      <button class="btn btn-sm btn-danger" style="font-size:11px;padding:3px 8px" onclick="deleteMessage(${data.id})">
+        <i class="fas fa-trash"></i> Delete
+      </button>
+    </div>`;
+  messagesContainer.appendChild(wrapper);
+  messagesContainer.scrollTop = messagesContainer.scrollHeight;
+});
+
+socket.on('message_deleted', function(data) {
+  const el = document.getElementById(`msg-${data.msg_id}`);
+  if (el) el.remove();
+});
+
+function sendMessage() {
+  const content = chatInput.value.trim();
+  if (!content) return;
+  socket.emit('send_message', { grade_id: gradeId, content });
+  chatInput.value = '';
+}
+document.getElementById('sendBtn').addEventListener('click', sendMessage);
+chatInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); sendMessage(); } });
+
+function deleteMessage(msgId) {
+  if (!confirm('Delete this message?')) return;
+  socket.emit('delete_message', { msg_id: msgId });
+}
+</script>
+{% endblock %}

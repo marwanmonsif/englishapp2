@@ -1,0 +1,129 @@
+{% extends "shared/base.html" %}
+{% block title %}{{ course.title }}{% endblock %}
+{% block page_title %}{{ course.title }}{% endblock %}
+{% block content %}
+
+<div class="breadcrumb">
+  <a href="{{ url_for('teacher.courses') }}">Courses</a>
+  <i class="fas fa-chevron-right" style="font-size:11px"></i>
+  <span>{{ course.title }}</span>
+</div>
+
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+  <div>
+    <span class="badge badge-primary">{{ course.grade.name }}</span>
+    {% if not course.is_published %}<span class="badge badge-gray" style="margin-left:6px">Draft</span>{% endif %}
+  </div>
+  <div style="display:flex;gap:10px">
+    <a href="{{ url_for('teacher.edit_course', course_id=course.id) }}" class="btn btn-ghost btn-sm">
+      <i class="fas fa-cog"></i> Edit Course
+    </a>
+    <button class="btn btn-primary btn-sm" data-modal="addUnitModal">
+      <i class="fas fa-plus"></i> Add Unit
+    </button>
+  </div>
+</div>
+
+{% if course.units %}
+  {% for unit in course.units %}
+  <div class="card" style="margin-bottom:16px">
+    <div style="padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);background:var(--bg)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <div class="unit-icon"><i class="fas fa-folder" style="color:var(--primary)"></i></div>
+        <div>
+          <div style="font-weight:700;font-size:15px">{{ unit.title }}</div>
+          {% if unit.description %}<div class="text-sm text-muted">{{ unit.description }}</div>{% endif %}
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <a href="{{ url_for('teacher.add_lesson', unit_id=unit.id) }}" class="btn btn-sm btn-outline">
+          <i class="fas fa-plus"></i> Add Lesson
+        </a>
+        <form method="POST" action="{{ url_for('teacher.delete_unit', unit_id=unit.id) }}" style="display:inline">
+          <button type="button" class="btn btn-sm btn-danger"
+            onclick="confirmDelete(this.form, 'Delete this unit and all its lessons?')">
+            <i class="fas fa-trash"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+
+    {% if unit.lessons %}
+    <div>
+      {% for lesson in unit.lessons %}
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 20px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:12px">
+          <div class="lesson-icon">
+            {% if lesson.youtube_url %}<i class="fas fa-play" style="color:var(--primary)"></i>
+            {% else %}<i class="fas fa-book" style="color:var(--primary)"></i>{% endif %}
+          </div>
+          <div>
+            <div style="font-weight:600;font-size:14px">{{ lesson.title }}</div>
+            <div style="display:flex;gap:10px;margin-top:4px">
+              {% if lesson.youtube_url %}<span class="badge badge-primary" style="font-size:11px"><i class="fas fa-video"></i> Video</span>{% endif %}
+              {% if lesson.pdf_filename %}<span class="badge badge-gray" style="font-size:11px"><i class="fas fa-file-pdf"></i> PDF</span>{% endif %}
+              {% if lesson.exams %}<span class="badge badge-warning" style="font-size:11px"><i class="fas fa-clipboard-list"></i> {{ lesson.exams|length }} Quiz</span>{% endif %}
+            </div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <a href="{{ url_for('teacher.edit_lesson', lesson_id=lesson.id) }}" class="btn btn-sm btn-ghost">
+            <i class="fas fa-edit"></i> Edit
+          </a>
+          <form method="POST" action="{{ url_for('teacher.delete_lesson', lesson_id=lesson.id) }}" style="display:inline">
+            <button type="button" class="btn btn-sm btn-danger"
+              onclick="confirmDelete(this.form, 'Delete this lesson?')">
+              <i class="fas fa-trash"></i>
+            </button>
+          </form>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="padding:20px;text-align:center;color:var(--text-muted);font-size:14px">
+      No lessons yet. <a href="{{ url_for('teacher.add_lesson', unit_id=unit.id) }}" style="color:var(--primary);font-weight:600">Add the first lesson</a>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+{% else %}
+<div class="card">
+  <div class="empty-state">
+    <div class="empty-icon">📂</div>
+    <div class="empty-title">No Units Yet</div>
+    <div class="empty-sub">Add your first unit to start building this course.</div>
+    <button class="btn btn-primary" style="margin-top:16px" data-modal="addUnitModal">
+      <i class="fas fa-plus"></i> Add Unit
+    </button>
+  </div>
+</div>
+{% endif %}
+
+<!-- Add Unit Modal -->
+<div class="modal-overlay" id="addUnitModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Add Unit to {{ course.title }}</div>
+      <button class="modal-close">×</button>
+    </div>
+    <form method="POST" action="{{ url_for('teacher.add_unit', course_id=course.id) }}">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Unit Title *</label>
+          <input type="text" name="title" class="form-control" placeholder="e.g. Unit 1: Present Tenses" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Description</label>
+          <textarea name="description" class="form-control" placeholder="What does this unit cover?"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-ghost" data-close-modal>Cancel</button>
+        <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Unit</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% endblock %}

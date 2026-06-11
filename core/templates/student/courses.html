@@ -1,0 +1,44 @@
+{% extends "shared/base.html" %}
+{% block title %}My Courses{% endblock %}
+{% block page_title %}My Courses{% endblock %}
+{% block content %}
+
+<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:24px">
+  <div>
+    <h2 style="font-size:22px;font-weight:800">{{ current_user.grade.name }} Courses</h2>
+    <p style="color:var(--text-secondary);font-size:14px">{{ courses|length }} course(s) available</p>
+  </div>
+</div>
+
+{% if courses %}
+  <div class="cards-grid">
+    {% for course in courses %}
+    <a href="{{ url_for('student.course_detail', course_id=course.id) }}" class="course-card">
+      <div class="course-card-thumb" style="background:linear-gradient(135deg, hsl({{ loop.index * 40 }}, 70%, 40%), hsl({{ loop.index * 40 + 30 }}, 70%, 55%))">
+        📚
+      </div>
+      <div class="course-card-body">
+        <div class="course-card-title">{{ course.title }}</div>
+        <div class="course-card-desc">{{ course.description or 'Click to start learning' }}</div>
+      </div>
+      <div class="course-card-meta">
+        <div class="meta-item"><i class="fas fa-layer-group"></i> {{ course.units|length }} Units</div>
+        <div class="meta-item"><i class="fas fa-play-circle"></i>
+          {% set total = namespace(count=0) %}
+          {% for unit in course.units %}{% set total.count = total.count + unit.lessons|length %}{% endfor %}
+          {{ total.count }} Lessons
+        </div>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="card">
+    <div class="empty-state">
+      <div class="empty-icon">📚</div>
+      <div class="empty-title">No Courses Yet</div>
+      <div class="empty-sub">Your teacher hasn't added courses for {{ current_user.grade.name }} yet.</div>
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

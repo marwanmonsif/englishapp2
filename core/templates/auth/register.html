@@ -1,0 +1,60 @@
+{% extends "shared/base.html" %}
+{% block title %}Register{% endblock %}
+{% block auth_content %}
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-logo">
+      <div class="auth-logo-icon"><i class="fas fa-graduation-cap"></i></div>
+      <div class="auth-logo-title">EduEnglish</div>
+      <div class="auth-logo-sub">Learning Platform</div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% for category, message in messages %}
+        <div class="alert alert-{{ category }}" style="margin-bottom:16px">
+          <i class="fas fa-exclamation-circle"></i> {{ message }}
+          <button class="alert-close" onclick="this.parentElement.remove()">×</button>
+        </div>
+      {% endfor %}
+    {% endwith %}
+
+    <div class="auth-title">Create Account</div>
+    <div class="auth-sub">Join the English learning platform</div>
+
+    <form method="POST">
+      <div class="form-group">
+        <label class="form-label">Full Name</label>
+        <input type="text" name="name" class="form-control" placeholder="Your full name" required autofocus>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Email Address</label>
+        <input type="email" name="email" class="form-control" placeholder="you@example.com" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Phone Number</label>
+        <input type="tel" name="phone" class="form-control" placeholder="01xxxxxxxxx">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Grade</label>
+        <select name="grade_id" class="form-control" required>
+          <option value="">Select your grade...</option>
+          {% for grade in grades %}
+            <option value="{{ grade.id }}">{{ grade.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Password</label>
+        <input type="password" name="password" class="form-control" placeholder="Min. 6 characters" required minlength="6">
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+        <i class="fas fa-user-plus"></i> Create Account
+      </button>
+    </form>
+
+    <div class="auth-link">
+      Already have an account? <a href="{{ url_for('auth.login') }}">Sign in</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

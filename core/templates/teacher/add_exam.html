@@ -1,0 +1,141 @@
+{% extends "shared/base.html" %}
+{% block title %}Create Exam{% endblock %}
+{% block page_title %}Create Exam{% endblock %}
+{% block content %}
+
+<div class="breadcrumb">
+  <a href="{{ url_for('teacher.exams') }}">Exams</a>
+  <i class="fas fa-chevron-right" style="font-size:11px"></i>
+  <span>Create New Exam</span>
+</div>
+
+<form method="POST" id="examForm">
+  <div style="display:grid;grid-template-columns:1fr 320px;gap:20px;align-items:start">
+
+    <!-- Questions -->
+    <div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header">
+          <div class="card-title"><i class="fas fa-question-circle" style="color:var(--primary);margin-right:8px"></i>Questions</div>
+          <button type="button" class="btn btn-outline btn-sm" onclick="addQuestion()">
+            <i class="fas fa-plus"></i> Add Question
+          </button>
+        </div>
+        <div class="card-body" id="questionsContainer">
+          <!-- Initial question -->
+          <div class="question-builder" id="q_0">
+            <button type="button" class="btn btn-sm btn-danger remove-q" onclick="removeQuestion(0)" style="display:none">
+              <i class="fas fa-times"></i>
+            </button>
+            <div class="form-group">
+              <label class="form-label">Question 1</label>
+              <textarea name="q_text[]" class="form-control" placeholder="Enter the question..." required></textarea>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">A)</label>
+                <input type="text" name="q_a[]" class="form-control" placeholder="Option A" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">B)</label>
+                <input type="text" name="q_b[]" class="form-control" placeholder="Option B" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">C)</label>
+                <input type="text" name="q_c[]" class="form-control" placeholder="Option C" required>
+              </div>
+              <div class="form-group">
+                <label class="form-label">D)</label>
+                <input type="text" name="q_d[]" class="form-control" placeholder="Option D" required>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Correct Answer</label>
+              <select name="q_correct[]" class="form-control" required>
+                <option value="A">A</option>
+                <option value="B">B</option>
+                <option value="C">C</option>
+                <option value="D">D</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="card">
+      <div class="card-header"><div class="card-title">Exam Settings</div></div>
+      <div class="card-body">
+        <div class="form-group">
+          <label class="form-label">Exam Title *</label>
+          <input type="text" name="title" class="form-control" placeholder="e.g. Unit 1 Quiz" required>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Grade *</label>
+          <select name="grade_id" class="form-control" required>
+            <option value="">Select grade...</option>
+            {% for grade in grades %}
+            <option value="{{ grade.id }}">{{ grade.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Duration (minutes)</label>
+          <input type="number" name="duration_minutes" class="form-control" value="30" min="5" max="180">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Pass Score (%)</label>
+          <input type="number" name="pass_score" class="form-control" value="60" min="1" max="100">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center">
+          <i class="fas fa-save"></i> Save Exam
+        </button>
+        <a href="{{ url_for('teacher.exams') }}" class="btn btn-ghost" style="width:100%;justify-content:center;margin-top:8px">Cancel</a>
+      </div>
+    </div>
+  </div>
+</form>
+
+{% endblock %}
+{% block extra_scripts %}
+<script>
+let qCount = 1;
+
+function addQuestion() {
+  const container = document.getElementById('questionsContainer');
+  const idx = qCount;
+  const div = document.createElement('div');
+  div.className = 'question-builder';
+  div.id = `q_${idx}`;
+  div.innerHTML = `
+    <button type="button" class="btn btn-sm btn-danger remove-q" onclick="removeQuestion(${idx})">
+      <i class="fas fa-times"></i>
+    </button>
+    <div class="form-group">
+      <label class="form-label">Question ${idx + 1}</label>
+      <textarea name="q_text[]" class="form-control" placeholder="Enter the question..." required></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group"><label class="form-label">A)</label><input type="text" name="q_a[]" class="form-control" placeholder="Option A" required></div>
+      <div class="form-group"><label class="form-label">B)</label><input type="text" name="q_b[]" class="form-control" placeholder="Option B" required></div>
+      <div class="form-group"><label class="form-label">C)</label><input type="text" name="q_c[]" class="form-control" placeholder="Option C" required></div>
+      <div class="form-group"><label class="form-label">D)</label><input type="text" name="q_d[]" class="form-control" placeholder="Option D" required></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Correct Answer</label>
+      <select name="q_correct[]" class="form-control" required>
+        <option value="A">A</option><option value="B">B</option><option value="C">C</option><option value="D">D</option>
+      </select>
+    </div>`;
+  container.appendChild(div);
+  qCount++;
+  div.scrollIntoView({ behavior: 'smooth', block: 'center' });
+}
+
+function removeQuestion(idx) {
+  const el = document.getElementById(`q_${idx}`);
+  if (el) el.remove();
+}
+</script>
+{% endblock %}

@@ -1,0 +1,103 @@
+{% extends "shared/base.html" %}
+{% block title %}{{ exam.title }} — Results{% endblock %}
+{% block page_title %}Exam Results{% endblock %}
+{% block content %}
+
+<div class="breadcrumb">
+  <a href="{{ url_for('teacher.exams') }}">Exams</a>
+  <i class="fas fa-chevron-right" style="font-size:11px"></i>
+  <span>{{ exam.title }}</span>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 280px;gap:20px;align-items:start;margin-bottom:20px">
+  <div class="card">
+    <div class="card-body" style="padding:20px 24px">
+      <h2 style="font-size:20px;font-weight:800;margin-bottom:10px">{{ exam.title }}</h2>
+      <div style="display:flex;gap:16px;flex-wrap:wrap">
+        <div class="meta-item"><i class="fas fa-graduation-cap" style="color:var(--primary)"></i> {{ exam.grade.name }}</div>
+        <div class="meta-item"><i class="fas fa-question-circle" style="color:var(--primary)"></i> {{ exam.questions|length }} Questions</div>
+        <div class="meta-item"><i class="fas fa-clock" style="color:var(--primary)"></i> {{ exam.duration_minutes }} min</div>
+        <div class="meta-item"><i class="fas fa-trophy" style="color:var(--warning)"></i> Pass: {{ exam.pass_score }}%</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-body" style="text-align:center;padding:20px">
+      {% if results %}
+        {% set avg = results|map(attribute='percentage')|list|sum / results|length %}
+        <div style="font-size:36px;font-weight:800;color:{{ 'var(--success)' if avg >= exam.pass_score else 'var(--error)' }}">
+          {{ "%.0f"|format(avg) }}%
+        </div>
+        <div class="text-sm text-muted">Average Score</div>
+        <div style="margin-top:12px;font-size:13px">
+          <span style="color:var(--success)">✓ {{ results|selectattr('percentage','ge', exam.pass_score)|list|length }} passed</span>
+          &nbsp;·&nbsp;
+          <span style="color:var(--error)">✗ {{ results|rejectattr('percentage','ge', exam.pass_score)|list|length }} failed</span>
+        </div>
+      {% else %}
+        <div style="color:var(--text-muted)">No submissions yet</div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Questions preview -->
+<div class="card" style="margin-bottom:20px">
+  <div class="card-header"><div class="card-title">Questions ({{ exam.questions|length }})</div></div>
+  <div class="card-body" style="padding:16px 24px">
+    {% for q in exam.questions %}
+    <div style="padding:12px 0;border-bottom:1px solid var(--border);{% if loop.last %}border-bottom:none{% endif %}">
+      <div style="font-weight:600;margin-bottom:6px">{{ loop.index }}. {{ q.text }}</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;font-size:13px">
+        {% for l, t in [('A',q.option_a),('B',q.option_b),('C',q.option_c),('D',q.option_d)] %}
+        <span style="color:{{ 'var(--success)' if l == q.correct_answer else 'var(--text-secondary)' }};font-weight:{{ '700' if l == q.correct_answer else '400' }}">
+          {{ l }}) {{ t }} {% if l == q.correct_answer %}✓{% endif %}
+        </span>
+        {% endfor %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- Student results -->
+<div class="card">
+  <div class="card-header"><div class="card-title">Student Results ({{ results|length }})</div></div>
+  {% if results %}
+  <div class="table-wrap">
+    <table>
+      <thead><tr><th>Student</th><th>Score</th><th>Percentage</th><th>Status</th><th>Date</th><th></th></tr></thead>
+      <tbody>
+        {% for r in results|sort(attribute='submitted_at', reverse=True) %}
+        <tr>
+          <td><strong>{{ r.student.name }}</strong><br><span class="text-sm text-muted">{{ r.student.email }}</span></td>
+          <td>{{ r.score }} / {{ r.total }}</td>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="progress-bar" style="width:80px">
+                <div class="progress-fill" style="width:{{ r.percentage }}%;background:{{ 'var(--success)' if r.percentage >= exam.pass_score else 'var(--error)' }}"></div>
+              </div>
+              {{ "%.1f"|format(r.percentage) }}%
+            </div>
+          </td>
+          <td><span class="badge {{ 'badge-success' if r.percentage >= exam.pass_score else 'badge-danger' }}">
+            {{ 'Pass' if r.percentage >= exam.pass_score else 'Fail' }}
+          </span></td>
+          <td class="text-sm text-muted">{{ r.submitted_at.strftime('%d %b %Y %H:%M') }}</td>
+          <td><a href="{{ url_for('student.exam_result', result_id=r.id) }}" class="btn btn-sm btn-ghost">View</a></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body">
+    <div class="empty-state" style="padding:30px">
+      <div class="empty-icon" style="font-size:40px">📊</div>
+      <div class="empty-title">No Submissions Yet</div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

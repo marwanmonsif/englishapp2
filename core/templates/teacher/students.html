@@ -1,0 +1,88 @@
+{% extends "shared/base.html" %}
+{% block title %}Students{% endblock %}
+{% block page_title %}Students{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><i class="fas fa-users" style="color:var(--primary);margin-right:8px"></i>All Students ({{ students|length }})</div>
+    <form method="GET" style="display:flex;gap:10px">
+      <input type="text" name="q" value="{{ q }}" class="form-control" placeholder="Search by name or email..." style="width:280px">
+      <button type="submit" class="btn btn-primary btn-sm"><i class="fas fa-search"></i></button>
+    </form>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Student</th>
+          <th>Grade</th>
+          <th>Phone</th>
+          <th>Subscription</th>
+          <th>Joined</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for student in students %}
+        {% set sub = subs.get(student.id) %}
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:10px">
+              <div class="avatar" style="width:34px;height:34px;font-size:13px;flex-shrink:0">{{ student.name[0].upper() }}</div>
+              <div>
+                <div style="font-weight:600">{{ student.name }}</div>
+                <div class="text-sm text-muted">{{ student.email }}</div>
+              </div>
+            </div>
+          </td>
+          <td><span class="badge badge-primary">{{ student.grade.name if student.grade else '—' }}</span></td>
+          <td class="text-sm">{{ student.phone or '—' }}</td>
+          <td>
+            {% if sub %}
+              {% if sub.expires_at > now %}
+                <span class="badge badge-success"><i class="fas fa-check"></i> Active</span>
+                <div class="text-sm text-muted" style="margin-top:3px">Until {{ sub.expires_at.strftime('%d %b %Y') }}</div>
+              {% else %}
+                <span class="badge badge-danger">Expired</span>
+              {% endif %}
+            {% else %}
+              <span class="badge badge-gray">None</span>
+            {% endif %}
+          </td>
+          <td class="text-sm text-muted">{{ student.created_at.strftime('%d %b %Y') }}</td>
+          <td>
+            {% if student.is_banned %}
+              <span class="badge badge-danger">Banned</span>
+            {% else %}
+              <span class="badge badge-success">Active</span>
+            {% endif %}
+          </td>
+          <td>
+            <form method="POST" action="{{ url_for('teacher.ban_student', student_id=student.id) }}" style="display:inline">
+              <button type="submit" class="btn btn-sm {{ 'btn-ghost' if student.is_banned else 'btn-danger' }}"
+                onclick="return confirm('{{ 'Unban' if student.is_banned else 'Ban' }} this student?')">
+                
+                {{ 'Unban' if student.is_banned else 'Ban' }}
+              </button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+        {% if not students %}
+        <tr><td colspan="7" style="text-align:center;padding:40px;color:var(--text-muted)">
+          {% if q %}No students found for "{{ q }}"{% else %}No students registered yet{% endif %}
+        </td></tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{% endblock %}
+{% block extra_scripts %}
+<script>
+const now = new Date();
+</script>
+{% endblock %}

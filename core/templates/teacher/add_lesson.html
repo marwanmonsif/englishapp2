@@ -1,0 +1,41 @@
+{% extends "shared/base.html" %}
+{% block title %}Add Lesson{% endblock %}
+{% block page_title %}Add Lesson{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('teacher.courses') }}">Courses</a>
+  <i class="fas fa-chevron-right" style="font-size:11px"></i>
+  <a href="{{ url_for('teacher.course_detail', course_id=unit.course_id) }}">{{ unit.course.title }}</a>
+  <i class="fas fa-chevron-right" style="font-size:11px"></i>
+  <span>Add Lesson to {{ unit.title }}</span>
+</div>
+<div class="card" style="max-width:680px">
+  <div class="card-header"><div class="card-title">Add Lesson to: {{ unit.title }}</div></div>
+  <div class="card-body">
+    <form method="POST" enctype="multipart/form-data">
+      <div class="form-group">
+        <label class="form-label">Lesson Title *</label>
+        <input type="text" name="title" class="form-control" placeholder="e.g. Present Simple Tense" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description / Notes</label>
+        <textarea name="description" class="form-control" placeholder="Lesson objectives or notes for students..."></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-video" style="color:var(--primary)"></i> YouTube Video URL</label>
+        <input type="url" name="youtube_url" class="form-control" placeholder="https://www.youtube.com/watch?v=...">
+        <div class="form-text">Paste the full YouTube URL. Unlisted videos are supported.</div>
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-file-pdf" style="color:var(--error)"></i> PDF Notes (optional)</label>
+        <input type="file" name="pdf_file" class="form-control" accept=".pdf">
+        <div class="form-text">Upload a PDF for notes or worksheets (max 16MB).</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Add Lesson</button>
+        <a href="{{ url_for('teacher.course_detail', course_id=unit.course_id) }}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

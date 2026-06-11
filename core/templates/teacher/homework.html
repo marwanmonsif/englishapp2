@@ -1,0 +1,90 @@
+{% extends "shared/base.html" %}
+{% block title %}Homework{% endblock %}
+{% block page_title %}Homework Submissions{% endblock %}
+{% block content %}
+
+<div class="card">
+  <div class="card-header">
+    <div class="card-title"><i class="fas fa-tasks" style="color:var(--primary);margin-right:8px"></i>All Submissions ({{ submissions|length }})</div>
+    <div style="display:flex;gap:8px">
+      <span class="badge badge-primary">{{ submissions|selectattr('status','eq','submitted')|list|length }} New</span>
+      <span class="badge badge-success">{{ submissions|selectattr('status','eq','graded')|list|length }} Graded</span>
+    </div>
+  </div>
+  {% if submissions %}
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Student</th><th>Lesson</th><th>File</th><th>Status</th><th>Grade</th><th>Submitted</th><th>Actions</th></tr>
+      </thead>
+      <tbody>
+        {% for sub in submissions %}
+        <tr>
+          <td>
+            <strong>{{ sub.student.name }}</strong><br>
+            <span class="text-sm text-muted">{{ sub.student.grade.name if sub.student.grade else '' }}</span>
+          </td>
+          <td class="text-sm">{{ sub.lesson.title }}</td>
+          <td>
+            <a href="{{ url_for('teacher.download_homework', filename=sub.filename) }}" class="btn btn-sm btn-ghost">
+              <i class="fas fa-download"></i> {{ sub.original_name or sub.filename }}
+            </a>
+          </td>
+          <td>
+            <span class="badge {{ 'badge-success' if sub.status == 'graded' else 'badge-warning' if sub.status == 'reviewed' else 'badge-primary' }}">
+              {{ sub.status|capitalize }}
+            </span>
+          </td>
+          <td>{{ sub.grade_given if sub.grade_given is not none else '—' }}</td>
+          <td class="text-sm text-muted">{{ sub.submitted_at.strftime('%d %b %Y') }}</td>
+          <td>
+            <button class="btn btn-sm btn-outline" data-modal="gradeModal_{{ sub.id }}">
+              <i class="fas fa-star"></i> Grade
+            </button>
+          </td>
+        </tr>
+
+        <!-- Grade Modal per submission -->
+        <div class="modal-overlay" id="gradeModal_{{ sub.id }}">
+          <div class="modal">
+            <div class="modal-header">
+              <div class="modal-title">Grade Homework — {{ sub.student.name }}</div>
+              <button class="modal-close">×</button>
+            </div>
+            <form method="POST" action="{{ url_for('teacher.grade_homework', sub_id=sub.id) }}">
+              <div class="modal-body">
+                <div style="margin-bottom:14px;font-size:14px;color:var(--text-secondary)">
+                  Lesson: <strong>{{ sub.lesson.title }}</strong>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Grade (0–100)</label>
+                  <input type="number" name="grade" class="form-control" value="{{ sub.grade_given or '' }}" min="0" max="100" placeholder="e.g. 85">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Note for Student</label>
+                  <textarea name="note" class="form-control" placeholder="Feedback or comments...">{{ sub.teacher_note or '' }}</textarea>
+                </div>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-ghost" data-close-modal>Cancel</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Grade</button>
+              </div>
+            </form>
+          </div>
+        </div>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="card-body">
+    <div class="empty-state">
+      <div class="empty-icon">📁</div>
+      <div class="empty-title">No Submissions Yet</div>
+      <div class="empty-sub">Students haven't submitted any homework yet.</div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

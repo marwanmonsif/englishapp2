@@ -1,0 +1,99 @@
+{% extends "shared/base.html" %}
+{% block title %}Teacher Dashboard{% endblock %}
+{% block page_title %}Teacher Dashboard{% endblock %}
+{% block content %}
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon blue"><i class="fas fa-users"></i></div>
+    <div><div class="stat-value">{{ students }}</div><div class="stat-label">Total Students</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon green"><i class="fas fa-book-open"></i></div>
+    <div><div class="stat-value">{{ courses }}</div><div class="stat-label">Courses</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon orange"><i class="fas fa-clipboard-list"></i></div>
+    <div><div class="stat-value">{{ exams }}</div><div class="stat-label">Exams</div></div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-icon {{ 'red' if reports > 0 else 'blue' }}"><i class="fas fa-flag"></i></div>
+    <div><div class="stat-value">{{ reports }}</div><div class="stat-label">Pending Reports</div></div>
+  </div>
+</div>
+
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+
+  <!-- Recent Students -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fas fa-users" style="color:var(--primary);margin-right:8px"></i>New Students</div>
+      <a href="{{ url_for('teacher.students') }}" class="btn btn-sm btn-ghost">View All</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Name</th><th>Grade</th><th>Joined</th></tr></thead>
+        <tbody>
+          {% for s in recent_students %}
+          <tr>
+            <td><strong>{{ s.name }}</strong><br><span class="text-sm text-muted">{{ s.email }}</span></td>
+            <td><span class="badge badge-primary">{{ s.grade.name if s.grade else '—' }}</span></td>
+            <td class="text-sm text-muted">{{ s.created_at.strftime('%d %b') }}</td>
+          </tr>
+          {% endfor %}
+          {% if not recent_students %}
+          <tr><td colspan="3" style="text-align:center;color:var(--text-muted)">No students yet</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Recent Homework -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-title"><i class="fas fa-tasks" style="color:var(--primary);margin-right:8px"></i>Recent Homework</div>
+      <a href="{{ url_for('teacher.homework') }}" class="btn btn-sm btn-ghost">View All</a>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Student</th><th>Lesson</th><th>Status</th></tr></thead>
+        <tbody>
+          {% for sub in recent_submissions %}
+          <tr>
+            <td><strong>{{ sub.student.name }}</strong></td>
+            <td class="text-sm">{{ sub.lesson.title }}</td>
+            <td>
+              <span class="badge {{ 'badge-success' if sub.status == 'graded' else 'badge-warning' if sub.status == 'reviewed' else 'badge-primary' }}">
+                {{ sub.status|capitalize }}
+              </span>
+            </td>
+          </tr>
+          {% endfor %}
+          {% if not recent_submissions %}
+          <tr><td colspan="3" style="text-align:center;color:var(--text-muted)">No submissions yet</td></tr>
+          {% endif %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Quick links -->
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-top:20px">
+  {% set links = [
+    (url_for('teacher.add_exam'), 'fa-plus-circle', 'Create Exam', 'blue'),
+    (url_for('teacher.codes'), 'fa-key', 'Generate Codes', 'green'),
+    (url_for('teacher.announcements'), 'fa-bullhorn', 'Post Announcement', 'orange'),
+    (url_for('teacher.chat_moderation'), 'fa-comments', 'Chat Moderation', 'red'),
+  ] %}
+  {% for url, icon, label, color in links %}
+  <a href="{{ url }}" class="card" style="text-decoration:none;padding:20px;text-align:center;transition:all .2s;display:block">
+    <div class="stat-icon {{ color }}" style="margin:0 auto 10px"><i class="fas {{ icon }}"></i></div>
+    <div style="font-weight:600;font-size:13px;color:var(--text)">{{ label }}</div>
+  </a>
+  {% endfor %}
+</div>
+
+{% endblock %}

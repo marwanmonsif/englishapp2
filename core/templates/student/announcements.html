@@ -1,0 +1,40 @@
+{% extends "shared/base.html" %}
+{% block title %}Announcements{% endblock %}
+{% block page_title %}Announcements{% endblock %}
+{% block content %}
+
+<h2 style="font-size:22px;font-weight:800;margin-bottom:20px">Announcements</h2>
+
+{% if announcements %}
+  {% for ann in announcements %}
+  <div class="ann-card {{ 'pinned' if ann.is_pinned }}">
+    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
+      <div style="flex:1">
+        {% if ann.is_pinned %}
+          <span class="badge badge-primary" style="margin-bottom:8px"><i class="fas fa-thumbtack"></i> Pinned</span>
+        {% endif %}
+        {% if ann.grade_id %}
+          <span class="badge badge-gray" style="margin-bottom:8px">{{ ann.grade.name }}</span>
+        {% else %}
+          <span class="badge badge-gray" style="margin-bottom:8px">All Grades</span>
+        {% endif %}
+        <div class="ann-title">{{ ann.title }}</div>
+        <div class="ann-content">{{ ann.content }}</div>
+        <div class="ann-meta">
+          <i class="fas fa-calendar"></i> {{ ann.created_at.strftime('%d %B %Y') }}
+        </div>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="card">
+    <div class="empty-state">
+      <div class="empty-icon">📢</div>
+      <div class="empty-title">No Announcements</div>
+      <div class="empty-sub">Nothing to show right now. Check back later.</div>
+    </div>
+  </div>
+{% endif %}
+
+{% endblock %}

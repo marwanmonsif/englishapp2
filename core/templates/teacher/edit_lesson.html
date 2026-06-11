@@ -1,0 +1,46 @@
+{% extends "shared/base.html" %}
+{% block title %}Edit Lesson{% endblock %}
+{% block page_title %}Edit Lesson{% endblock %}
+{% block content %}
+<div class="breadcrumb">
+  <a href="{{ url_for('teacher.courses') }}">Courses</a>
+  <i class="fas fa-chevron-right" style="font-size:11px"></i>
+  <a href="{{ url_for('teacher.course_detail', course_id=lesson.unit.course_id) }}">{{ lesson.unit.course.title }}</a>
+  <i class="fas fa-chevron-right" style="font-size:11px"></i>
+  <span>Edit: {{ lesson.title }}</span>
+</div>
+<div class="card" style="max-width:680px">
+  <div class="card-header"><div class="card-title">Edit Lesson</div></div>
+  <div class="card-body">
+    <form method="POST" enctype="multipart/form-data">
+      <div class="form-group">
+        <label class="form-label">Lesson Title *</label>
+        <input type="text" name="title" class="form-control" value="{{ lesson.title }}" required>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Description</label>
+        <textarea name="description" class="form-control">{{ lesson.description or '' }}</textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-video" style="color:var(--primary)"></i> YouTube Video URL</label>
+        <input type="url" name="youtube_url" class="form-control" value="{{ lesson.youtube_url or '' }}" placeholder="https://www.youtube.com/watch?v=...">
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-file-pdf" style="color:var(--error)"></i> Replace PDF (optional)</label>
+        {% if lesson.pdf_filename %}
+          <div style="padding:10px;background:var(--bg);border-radius:6px;margin-bottom:8px;font-size:13px">
+            <i class="fas fa-file-pdf" style="color:var(--error)"></i> Current: {{ lesson.pdf_filename }}
+            <a href="{{ url_for('teacher.serve_pdf', filename=lesson.pdf_filename) }}" target="_blank" class="btn btn-sm btn-ghost" style="margin-left:8px">View</a>
+          </div>
+        {% endif %}
+        <input type="file" name="pdf_file" class="form-control" accept=".pdf">
+        <div class="form-text">Upload a new PDF to replace the current one.</div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Save Changes</button>
+        <a href="{{ url_for('teacher.course_detail', course_id=lesson.unit.course_id) }}" class="btn btn-ghost">Cancel</a>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
